@@ -1,0 +1,15 @@
+#!/bin/sh
+#PBS -P ASTR0852
+#PBS -q normal
+#PBS -l walltime=8:00:00
+#PBS -N rayTracingSmall
+#PBS -l select=10:ncpus=24:mpiprocs=2
+
+#PBS -o /mnt/lustre/users/lhunt/CurrentCode/stdoutSmall
+#PBS -e /mnt/lustre/users/lhunt/CurrentCode/stderrSmall
+
+
+cd /mnt/lustre/users/lhunt/CurrentCode
+
+nproc=`cat $PBS_NODEFILE | wc -l`
+mpirun -np $nproc python launchTracing_MPI.py 0 31
