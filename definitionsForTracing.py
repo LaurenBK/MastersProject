@@ -50,7 +50,7 @@ def quadratic(a, b, c):
         return x1, x2
 
 
-def dTheta(x0, hwhm):
+def d_theta(x0, hwhm):
     """
     A Lorenzian Profile fits this distribution, so this is the quantile
     function (inverse cumulative distribution) where the number that is
@@ -104,7 +104,7 @@ def spline(particle_number, ray_dist, particle_attribs):
 # -----------------------------------
 
 
-def addToDict(key, dictionary, to_add):
+def add_to_dict(key, dictionary, to_add):
     """
     Function to add details to dictionaries
     :param key: str
@@ -113,7 +113,7 @@ def addToDict(key, dictionary, to_add):
     :return:
     """
     try:
-        dk = dictionary[key]
+        _ = dictionary[key]
     except KeyError:
         dictionary[key] = []
     if isinstance(to_add, dict):
@@ -123,7 +123,7 @@ def addToDict(key, dictionary, to_add):
         dictionary[key] = to_add
 
 
-def readLightcone(object_type, indices_in_cone, dat_path, num_cube):
+def read_lightcone(object_type, indices_in_cone, dat_path, num_cube):
     print "-----------------------------------"
     print "----------", object_type, "-----------"
     print "-----------------------------------"
@@ -131,13 +131,13 @@ def readLightcone(object_type, indices_in_cone, dat_path, num_cube):
     position_file = object_type+"_positions_"
     if object_type == 'GALAXY':
         list_file = object_type+"AVERAGES_"
-        numbers_file = object_type+'_glist_'
+        numbers_file = object_type+'_gas_list_'
     if object_type == 'HALO':
         list_file = object_type+"GALAXIES_"
-        numbers_file = object_type+'_glist_'
+        numbers_file = object_type+'_gas_list_'
     attribs = {}
     pos = {}
-    gal_list = {}
+    gas_list = {}
     print "Reading in particle data from lightcone..."
 
     if object_type == "PARTICLE":
@@ -153,17 +153,17 @@ def readLightcone(object_type, indices_in_cone, dat_path, num_cube):
             if name in ('radii_gas', 'radii_r200', 'radii_stellar', 'hsml_gas'):
                 dat = data[name][:]
                 dat = dat/1000.0    # positions are in Mpc, so radii must be too
-                addToDict(name, attribs, dat)
+                add_to_dict(name, attribs, dat)
             elif name == 'rho_gas':
                 dat = data[name][:]  # code units were read in so we need to
                 #  convert from 10e10M*/kpc3 to g/cm3
-                UnitLength_in_cm = 3.085678e21
-                UnitMass_in_g = 1.989e43
-                dat = (dat*UnitMass_in_g)/(UnitLength_in_cm**3)
-                addToDict(name, attribs, dat)
+                unit_length_in_cm = 3.085678e21
+                unit_mass_in_g = 1.989e43
+                dat = (dat*unit_mass_in_g)/(unit_length_in_cm**3)
+                add_to_dict(name, attribs, dat)
             else:
                 dat = data[name][:]
-                addToDict(name, attribs, dat)
+                add_to_dict(name, attribs, dat)
 
     with h5py.File(os.path.expanduser(dat_path+position_file+str(num_cube)),
                    'r') as data:
@@ -171,16 +171,16 @@ def readLightcone(object_type, indices_in_cone, dat_path, num_cube):
             xpos = data['gpos'][:, 0]
             ypos = data['gpos'][:, 1]
             zpos = data['gpos'][:, 2]
-            addToDict('x', pos, xpos)
-            addToDict('y', pos, ypos)
-            addToDict('z', pos, zpos)
+            add_to_dict('x', pos, xpos)
+            add_to_dict('y', pos, ypos)
+            add_to_dict('z', pos, zpos)
         else:
             xpos = data['pos'][:, 0]
             ypos = data['pos'][:, 1]
             zpos = data['pos'][:, 2]
-            addToDict('x', pos, xpos)
-            addToDict('y', pos, ypos)
-            addToDict('z', pos, zpos)
+            add_to_dict('x', pos, xpos)
+            add_to_dict('y', pos, ypos)
+            add_to_dict('z', pos, zpos)
     if object_type == "GALAXY":
         with h5py.File(os.path.expanduser(dat_path+list_file+str(num_cube)),
                        'r') as data:
@@ -188,13 +188,13 @@ def readLightcone(object_type, indices_in_cone, dat_path, num_cube):
             for number in names:
                 dat = data[number][:]
                 dat = dat[ind]
-                addToDict(number, gal_list, dat)
+                add_to_dict(number, gas_list, dat)
         with h5py.File(os.path.expanduser(
                 dat_path + numbers_file + str(num_cube)), 'r') as data:
             names = data.keys()
             for number in names:
                 dat = data[number][:]
-                addToDict(number + '_gasID', gal_list, dat)
+                add_to_dict(number + '_gasID', gas_list, dat)
 
     if object_type == "HALO":
         with h5py.File(os.path.expanduser(dat_path+list_file+str(num_cube)),
@@ -207,20 +207,20 @@ def readLightcone(object_type, indices_in_cone, dat_path, num_cube):
                 if number in ['gasNumbers', 'starNumbers', 'galaxyNumbers']:
                     dat = data[number][:]
                     dat = dat[ind]
-                    addToDict(number, gal_list, dat)
+                    add_to_dict(number, gas_list, dat)
                 else:
                     d = {}
                     for n in dat.keys():
                         key = n.split('_')[1]
                         if int(key) in ind:
                             d[key] = dat[n][:]
-                    addToDict(number, gal_list, d)
+                    add_to_dict(number, gas_list, d)
         with h5py.File(os.path.expanduser(
                 dat_path+numbers_file + str(num_cube)), 'r') as data:
             names = data.keys()
             for number in names:
                 dat = data[number][:]
-                addToDict(number + '_gasID', gal_list, dat)
+                add_to_dict(number + '_gasID', gas_list, dat)
 
     if object_type == "PARTICLE":
         print 'maximum particle x,y,z = (', max(pos['x']), max(pos['y']), \
@@ -233,23 +233,25 @@ def readLightcone(object_type, indices_in_cone, dat_path, num_cube):
     if object_type == "PARTICLE":
             return position_data, attribs
     else:
-            return position_data, attribs, gal_list
+            return position_data, attribs, gas_list
 
 
-def readStructure(num_cube, section_of_rays, in_path, numSources):
-    particleID = {}
-    particleDist = {}
-    galaxyID = {}
-    galaxyDist = {}
-    haloID = {}
-    haloDist = {}
-    IDDicts = [particleID, galaxyID, haloID]
-    distDicts = [particleDist, galaxyDist, haloDist]
-    dataKeys = ['particle', 'galaxy', 'halo']
+def read_structure(num_cube, section_of_rays, in_path):
+    particle_id = {}
+    particle_dist = {}
+    galaxy_id = {}
+    galaxy_dist = {}
+    halo_id = {}
+    halo_dist = {}
+    id_dicts = [particle_id, galaxy_id, halo_id]
+    dist_dicts = [particle_dist, galaxy_dist, halo_dist]
+    data_keys = ['particle', 'galaxy', 'halo']
     print "Reading in structure data"
 
-    with h5py.File(os.path.expanduser(in_path+'objectsAlongRay'+str(num_cube)+'_'+str(section_of_rays)),'r') as data:
-        names = dataKeys
+    with h5py.File(os.path.expanduser(
+            in_path + 'objectsAlongRay' + str(num_cube) + '_' +
+            str(section_of_rays)), 'r') as data:
+        names = data_keys
         print 'Structure keys are:', names
         for i in range(len(names)):
             print '\n\n ------------', names[i], '------------  \n\n'
@@ -260,128 +262,130 @@ def readStructure(num_cube, section_of_rays, in_path, numSources):
                     dat2 = dat[key]
                     key = str(key)
                     k = key.split('_')
-                    lengthOfKeys = len(dat2.keys()) / 2
-                    IdList = [[]] * lengthOfKeys
-                    distList = [[]] * lengthOfKeys
+                    length_of_keys = len(dat2.keys()) / 2
+                    id_list = [[]] * length_of_keys
+                    dist_list = [[]] * length_of_keys
                     for m in dat2.keys():
-                       datSmall = dat2[m]
-                       m = str(m)
-                       key2 = m.split('_')
-                       key2[1] = int(key2[1])
-                       if key2[0] == 'raySection':
-                          IdList[key2[1]] = list(datSmall[:])
-                       else:
-                          distList[key2[1]] = list(datSmall[:])
-                    addToDict(k[1], IDDicts[i], IdList)
-                    addToDict(k[1], distDicts[i], distList)
+                        dat_small = dat2[m]
+                        m = str(m)
+                        key2 = m.split('_')
+                        key2[1] = int(key2[1])
+                        if key2[0] == 'raySection':
+                            id_list[key2[1]] = list(dat_small[:])
+                        else:
+                            dist_list[key2[1]] = list(dat_small[:])
+                    add_to_dict(k[1], id_dicts[i], id_list)
+                    add_to_dict(k[1], dist_dicts[i], dist_list)
             else:
                 dat = data[names[i]]
                 print 'Structure subkeys keys are:', dat.keys()
-                lengthOfKeys = len(dat.keys()) / 2
                 for key in dat.keys():
                     key = str(key)
                     k = key.split('_')
                     if k[0] == 'raySection':
-                        addToDict(k[1], IDDicts[i], dat[key])
+                        add_to_dict(k[1], id_dicts[i], dat[key])
                         print 'IDs added', dat[key].shape
                     else:
-                        addToDict(k[1], distDicts[i], dat[key])
+                        add_to_dict(k[1], dist_dicts[i], dat[key])
                         print 'Distances added', dat[key].shape
 
-    return particleID, galaxyID, haloID, particleDist, galaxyDist, haloDist
+    return particle_id, galaxy_id, halo_id, particle_dist, galaxy_dist,\
+        halo_dist
 
 # -----------------------------------
 #     SPATIAL SEARCHING FUNCTIONS
 # -----------------------------------
 
 
-def combineParticleIDs(length, nearList1, nearList2, nearList3):
-        nearCombined = []
+def combine_particle_ids(length, near_list1, near_list2, near_list3):
+        near_combined = []
         for i in range(length):
-            if len(nearList1[i]) > 0:
-                if len(nearList2[i]) > 0:
-                    if len(nearList3[i]) > 0:
-                        temp = nearList1[i] + nearList2[i] + nearList3[i]
+            if len(near_list1[i]) > 0:
+                if len(near_list2[i]) > 0:
+                    if len(near_list3[i]) > 0:
+                        temp = near_list1[i] + near_list2[i] + near_list3[i]
                     else:
                         temp = []
-                elif len(nearList2[i]) > 0:
-                    temp = nearList1[i] + nearList3[i]
+                elif len(near_list2[i]) > 0:
+                    temp = near_list1[i] + near_list3[i]
                 else:
-                    temp = nearList1[i]
-            elif len(nearList2[i]) > 0:
-                if len(nearList3[i]) > 0:
-                    temp = nearList2[i] + nearList3[i]
+                    temp = near_list1[i]
+            elif len(near_list2[i]) > 0:
+                if len(near_list3[i]) > 0:
+                    temp = near_list2[i] + near_list3[i]
                 else:
-                    temp = nearList2[i]
-            elif len(nearList3[i]) > 0:
-                temp = nearList3[i]
+                    temp = near_list2[i]
+            elif len(near_list3[i]) > 0:
+                temp = near_list3[i]
             else:
                 temp = []
-            nearCombined.append(temp)
-        return nearCombined
+            near_combined.append(temp)
+        return near_combined
 
-def checkDistanceToRay(nearList, ray, positions, attributes, radiusKey):
-        temp = []; distBetween=[]
+
+def check_distance_to_ray(near_list, ray, positions, attributes, radius_key):
+        temp = []
+        dist_between = []
         for i in range(len(ray)):
             temp2 = []
-            rayPiece = ray[i]
-            if len(nearList[i]) > 0:
-                npPos = positions[nearList[i]]
-                for j in npPos:
-                    temp2.append(distance(rayPiece, j))
-                radiusList = attributes[radiusKey][nearList[i]]
-                closeEnoughTest = np.greater_equal(radiusList, temp2)
-                closeEnough = np.array(nearList[i])[closeEnoughTest]
-                temp.append(list(closeEnough))
-                distBetween.append(list(np.array(temp2)[closeEnoughTest]))
+            ray_piece = ray[i]
+            if len(near_list[i]) > 0:
+                np_pos = positions[near_list[i]]
+                for j in np_pos:
+                    temp2.append(distance(ray_piece, j))
+                radius_list = attributes[radius_key][near_list[i]]
+                close_enough_test = np.greater_equal(radius_list, temp2)
+                close_enough = np.array(near_list[i])[close_enough_test]
+                temp.append(list(close_enough))
+                dist_between.append(list(np.array(temp2)[close_enough_test]))
             else:
-                temp.append(nearList[i])
-                distBetween.append(nearList[i])
-        return temp, distBetween
+                temp.append(near_list[i])
+                dist_between.append(near_list[i])
+        return temp, dist_between
 
 # -----------------------------------
 #    FIELD DIRECTION FUNCTIONS
 # -----------------------------------
 
 
-def findNe(lengthOfRay, particle, distances, particle_attribs):
-        Ne = np.zeros(lengthOfRay)  #electron density
+def find_ne(length_of_ray, particle, distances, particle_attribs):
+        ne = np.zeros(length_of_ray)  # electron density
         for i in range(len(particle)):
-            if len(particle[i])>0:
-                rhoTemp = particle_attribs['rho_gas'][particle[i]]
-                # find physical electron dnesity at my position#divide by
+            if len(particle[i]) > 0:
+                rho_temp = particle_attribs['rho_gas'][particle[i]]
+                # find physical electron density at my position#divide by
                 # proton mass to get particles/cm3
-                neTemp = particle_attribs['ne_gas'][particle[i]]
-                neTemp = np.multiply(rhoTemp, neTemp)/(1.6726219e-24)
+                ne_temp = particle_attribs['ne_gas'][particle[i]]
+                ne_temp = np.multiply(rho_temp, ne_temp) / 1.6726219e-24
                 # the particles are modelled as blobs with a certain density
                 # falloff
-                kernelList = np.zeros(len(particle[i]))
+                kernel_list = np.zeros(len(particle[i]))
                 for pn in range(len(particle[i])):
                     # find density at my distance from particle center
-                    kernelList[pn] = spline(particle[i][pn], distances[i][pn],
-                                            particle_attribs)
-                    neTemp = np.multiply(neTemp, kernelList)
-                    Ne[i] = sum(neTemp)
-        return Ne
+                    kernel_list[pn] = spline(particle[i][pn], distances[i][pn],
+                                             particle_attribs)
+                    ne_temp = np.multiply(ne_temp, kernel_list)
+                    ne[i] = sum(ne_temp)
+        return ne
 
 
-def directionSampling(length_of_ray, Ne, B_Direction, realistic_dl, dl_length):
+def direction_sampling(length_of_ray, B_direction, realistic_dl, dl_length):
         """ Direction of B dotted with direction of light ray will give
         positive or negative effect on RM  """
-        dlVec = np.full((length_of_ray), dl_length)
-        if B_Direction == "RANDOM":
-                randomBit = random.normal(0, np.sqrt(0.3), length_of_ray)
-                while np.any(randomBit > 1.0):
-                    tooLarge = np.where(randomBit > 1.0)[0]
-                    for j in tooLarge:
-                        randomBit[j] = random.normal(0, np.sqrt(0.3))
-                dlVec = randomBit * dlVec
-        elif B_Direction == "REALISTIC":
-            dlVec = realistic_dl
-        elif B_Direction == "ALIGNED":
-            dlVec = dlVec
-        print B_Direction, dl_length, dlVec
-        return dlVec
+        dl_vec = np.full(length_of_ray, dl_length)
+        if B_direction == "RANDOM":
+                random_bit = random.normal(0, np.sqrt(0.3), length_of_ray)
+                while np.any(random_bit > 1.0):
+                    too_large = np.where(random_bit > 1.0)[0]
+                    for j in too_large:
+                        random_bit[j] = random.normal(0, np.sqrt(0.3))
+                dl_vec = random_bit * dl_vec
+        elif B_direction == "REALISTIC":
+            dl_vec = realistic_dl
+        elif B_direction == "ALIGNED":
+            dl_vec = dl_vec
+        print B_direction, dl_length, dl_vec
+        return dl_vec
 
 # -----------------------------------
 #      MAGNETIC FIELD FUNCTIONS
@@ -395,402 +399,480 @@ def outflowB(b, density, p_scale, alpha):
     simulations)
     """
     factor = (density / p_scale)**alpha
-    #print "shapes",B.shape, density.shape
     return b*factor
 
-def filamentFields(length_of_ray,particle_id,distances,particle_attribs,B0,eta,pScale,alpha):
-        B0 = B0*1.0e6    #faraday rotation formulaa takes magnetic field in microgauss, so we need to convert from gauss to microgauss
-        #print len(particle_id),len(distances)
-        length_of_ray = len(particle_id)
-        Ne = np.zeros(length_of_ray)  #electron density
-        outflow = np.zeros(length_of_ray) #metallicity > 0 implies that this particle used to be part of galaxy
-        density = np.zeros(length_of_ray) #gas density at this point
-        BfromLSS = np.zeros(length_of_ray)
-        BfromOutflows = np.zeros(length_of_ray)
-        for i in range(len(particle_id)):
-                if len(particle_id[i])>0:
-                        neTemp = particle_attribs['ne_gas'][particle_id[i]]
-                        rhoTemp = particle_attribs['rho_gas'][particle_id[i]]
-          #              print 'density,ne',np.max(rhoTemp),np.max(neTemp)
-                        neTemp = np.multiply(rhoTemp,neTemp)/(1.6726219e-24)  #divide by proton mass to get particles/cm3
-         #               print 'ne',np.max(neTemp)
-                        outflowTemp = particle_attribs['z_gas'][particle_id[i]]
-                        kernelList = np.zeros(len(particle_id[i]))  #the particles are modelled as blobs with a certain density falloff
-                        for pn in range(len(particle_id[i])):
-                            kernelList[pn] = spline(particle_id[i][pn],distances[i][pn],particle_attribs)
-        #                print 'kernel',min(kernelList),max(kernelList)
-       #                 print neTemp.shape,rhoTemp.shape,kernelList.shape
-                        neTemp = np.multiply(neTemp,kernelList)
-                        #metallicity is defined for whole particle
-                        Ne[i] = sum(neTemp)
-                        outflow[i] = np.mean(outflowTemp)
-                        density[i] = sum(rhoTemp)
 
-                        if np.max(neTemp) != 0:
-                            Btemp = B0*neTemp*1000000.0    # the multiplication by 100000 is necessary to pull the magnetic field back to the desired field strength
-                            noOutflow = np.where(outflowTemp == 0)
+def filament_fields(particle_id, distances, particle_attribs, B0,
+                    p_scale, alpha):
+        B0 = B0 * 1.0e6
+        # faraday rotation formula takes magnetic field in microgauss, so we
+        #  need to convert from gauss to microgauss
+        length_of_ray = len(particle_id)
+        ne = np.zeros(length_of_ray)  # electron density
+        outflow = np.zeros(length_of_ray)
+        # metallicity > 0 implies that this particle used to be part of galaxy
+        density = np.zeros(length_of_ray)  # gas density at this point
+        BfromLSS = np.zeros(length_of_ray)
+        Bfrom_outflows = np.zeros(length_of_ray)
+        for i in range(len(particle_id)):
+                if len(particle_id[i]) > 0:
+                        ne_temp = particle_attribs['ne_gas'][particle_id[i]]
+                        rho_temp = particle_attribs['rho_gas'][particle_id[i]]
+                        ne_temp = np.multiply(rho_temp, ne_temp) / 1.6726219e-24
+                        # divide by proton mass to get particles/cm3
+                        outflow_temp = particle_attribs['z_gas'][particle_id[i]]
+                        kernel_list = np.zeros(len(particle_id[i]))
+                        # the particles are modelled as blobs with a certain
+                        # density falloff
+                        for pn in range(len(particle_id[i])):
+                            kernel_list[pn] = spline(particle_id[i][pn],
+                                                     distances[i][pn],
+                                                     particle_attribs)
+                        ne_temp = np.multiply(ne_temp, kernel_list)
+                        # metallicity is defined for whole particle
+                        ne[i] = sum(ne_temp)
+                        outflow[i] = np.mean(outflow_temp)
+                        density[i] = sum(rho_temp)
+
+                        if np.max(ne_temp) != 0:
+                            Btemp = B0 * ne_temp * 1000000.0
+                            # the multiplication by 100000 is necessary to pull
+                            #  the magnetic field back to the desired field
+                            # strength
+                            no_outflow = np.where(outflow_temp == 0)
                             BfromLSS_masked = Btemp[:]
-                            BfromLSS_masked[noOutflow[0]] = 0 #we do this to isolate only the places in the ray where metallicity is present
-                        else:  #ie, if the electron density is 0 for this ray piece - should not happen
+                            BfromLSS_masked[no_outflow[0]] = 0
+                            # we do this to isolate only the places in the ray
+                            #  where metallicity is present
+                        else:  # ie, if the electron density is 0 for this ray
+                            # piece (should not happen)
                             Btemp = np.array([0.0])
                             BfromLSS_masked = np.array([0.0])
 
                         BfromLSS[i] = sum(Btemp)
-                        BfromOutflows[i] = sum(outflowB(BfromLSS_masked,rhoTemp,pScale,alpha))
+                        Bfrom_outflows[i] = sum(outflowB(BfromLSS_masked,
+                                                         rho_temp, p_scale,
+                                                         alpha))
 
                 else:
                         outflow[i] = 0.0
-                        Ne[i] = 0.0
+                        ne[i] = 0.0
                         density[i] = 0.0
                         BfromLSS[i] = 0.0
-                        BfromOutflows[i] = 0.0
+                        Bfrom_outflows[i] = 0.0
 
-        #print "Min/max Ne",np.min(Ne),np.max(Ne),'\n',"Min/max metallicity",np.min(outflow),np.max(outflow),'\n',"Min/max density",np.min(density),np.max(density)
 
-        particleB = BfromLSS + BfromOutflows # normalised and scaled so that the upper limit matches that of Akahori, Ryu et al, http://iopscience.iop.org/article/10.1088/0004-637X/723/1/476/meta
-        toReturn  = [particleB,Ne]
-        return toReturn
+        particleB = BfromLSS + Bfrom_outflows
+        # normalised and scaled so that the upper limit matches that of
+        # Akahori, Ryu et al, http://iopscience.iop.org/article/10.1088/0004
+        # -637X/723/1/476/meta
+        to_return = [particleB, ne]
+        return to_return
 
-#-----------------------------------
+# -----------------------------------
 #      OBJECT CHECK FUNCTIONS
-#-----------------------------------
+# -----------------------------------
 
 
-def getIndices(listToCheck,associatedDist):
-        '''Makes sure that every galaxy or halo is only counted once'''
-        indices = []
-        distBetween = []
-        for i in range(len(listToCheck)):
-            if len(listToCheck[i])>0:
-                indices.extend(listToCheck[i])
-                distBetween.extend(associatedDist[i])
-        indices = np.array(indices)
-        distBetween = np.array(distBetween)
-        if len(indices)>0:
-            unq,unq_in = np.unique(indices,return_index=True)
-            indices = unq
-            distBetween = distBetween[unq_in]
-        indices = indices.astype(int)
-        indices = indices.T
-        distBetween = distBetween.T
-        return list(indices),list(distBetween)
+def get_indices(list_to_check,associated_dist):
+    """
+    Makes sure that every galaxy or halo is only counted once
+    """
+    indices = []
+    dist_between = []
+    for i in range(len(list_to_check)):
+        if len(list_to_check[i]) > 0:
+            indices.extend(list_to_check[i])
+            dist_between.extend(associated_dist[i])
+    indices = np.array(indices)
+    dist_between = np.array(dist_between)
+    if len(indices) > 0:
+        unq, unq_in = np.unique(indices, return_index=True)
+        indices = unq
+        dist_between = dist_between[unq_in]
+    indices = indices.astype(int)
+    indices = indices.T
+    dist_between = dist_between.T
+    return list(indices), list(dist_between)
 
 
-def emptyHalo(halo_id):
-    global LA, LA_cut, haloGlist
+def empty_halo(halo_id):
+    global LA, LA_cut, halo_gas_list
     for i in range(len(LA)):
         if LA[i] == 'galaxyNumbers':
-            full = np.where(haloGlist[LA[i]] > LA_cut[i])
-            empty = np.where(haloGlist[LA[i]] <= LA_cut[i])
+            full = np.where(halo_gas_list[LA[i]] > LA_cut[i])
+            empty = np.where(halo_gas_list[LA[i]] <= LA_cut[i])
     return full, empty
 
 
-def checkCentralGalaxy(near_galaxies):
-    global galaxyAttribs
+def check_central_galaxy(near_galaxies):
+    global galaxy_attribs
     print 'central galaxy check:', len(near_galaxies), \
-        galaxyAttribs['central'].shape
-    print 'central galaxy check:', near_galaxies, galaxyAttribs['central']
+        galaxy_attribs['central'].shape
+    print 'central galaxy check:', near_galaxies, galaxy_attribs['central']
     central_gal = []
     for l in near_galaxies:
         for gal_id in l:
-            if galaxyAttribs['central'][gal_id] == 1:
+            if galaxy_attribs['central'][gal_id] == 1:
                 central_gal.append(gal_id)
     return central_gal
 
 
-def checkUseful(indices,object_type,LA,LA_cut,LO,attributes):
+def check_useful(indices, object_type, LA, LA_cut, LO, attributes):
     """
     - Indices come from the nearest neighbour searches
     - Attribs of halo or galaxy
     - List, either halo or galaxy
     - LA = limiting attribute (list of strings)
     - LA_cut = vlaue of limit that results must be greater than (list of floats)
-    - LO = origin of the limiting factor, either galaxy or halogalaxy (list of strings)
+    - LO = origin of the limiting factor, either galaxy or halogalaxy (list of
+    strings)
     """
     useful = {}
     if object_type == 'GALAXY':
         for i in range(len(LO)):
             if LO[i] == 'galaxy':
-                attributesList = attributes[LA[i]]
-                print LA_cut,i
+                attributes_list = attributes[LA[i]]
+                print LA_cut, i
                 print LA_cut[i]
-                if type(attributesList[0]) == 'numpy.int64' or 'numpy.float64':
-                    useful[LA[i]] = indices[np.where(attributes[LA[i]][indices]>LA_cut[i])[0]]
-                elif type(attributesList[0]) == 'numpy.ndarray':
-                    useful[LA[i]] = indices[np.where(attributes[LA[i]][0][indices]>LA_cut[i])[0]]
+                if type(attributes_list[0]) == 'numpy.int64' or 'numpy.float64':
+                    useful[LA[i]] = indices[np.where(attributes[LA[i]][indices]
+                                                     > LA_cut[i])[0]]
+                elif type(attributes_list[0]) == 'numpy.ndarray':
+                    useful[LA[i]] = indices[np.where(
+                        attributes[LA[i]][0][indices] > LA_cut[i])[0]]
                 else:
-                    print "Weird errors with attributes;", attributesList, type(attributesList[0])
+                    print "Weird errors with attributes;", attributes_list,\
+                        type(attributes_list[0])
         for i in useful.keys():
-            print 'number of galaxies that can be used with key',i,'is:',len(useful[i])
-        usefulList = np.intersect1d(useful.values()[0],useful.values()[1])
+            print 'number of galaxies that can be used with key', i, 'is:', \
+                len(useful[i])
+        useful_list = np.intersect1d(useful.values()[0],useful.values()[1])
     elif object_type == 'HALO':
         for i in range(len(LO)):
             if LO[i] == 'halogalaxy':
                 try:
-                    useful[LA[i]] = indices[np.where(attributes[LA[i]][indices]>LA_cut[i])[0]]
+                    useful[LA[i]] = indices[np.where(
+                        attributes[LA[i]][indices] > LA_cut[i])[0]]
                 except:
-                    useful[LA[i]] = indices[np.where(attributes[LA[i]][0][indices]>LA_cut[i])[0]]
-                usefulList = useful[LA[i]]
+                    useful[LA[i]] = indices[np.where(
+                        attributes[LA[i]][0][indices] > LA_cut[i])[0]]
+                useful_list = useful[LA[i]]
         for i in useful.keys():
-            print 'number of halos that can be used with key',i,'is:',len(useful[i])
-    return usefulList
+            print 'number of halos that can be used with key', i, 'is:', \
+                len(useful[i])
+    return useful_list
 
 
-def overlapping(indices_in_cone,particle_id,distances,usefulIndices,Glist):
-         """
-         Find all the particles that the ray intersected, and remove them from the nearParticle list
-         """
-         gasIndices = indices_in_cone['PARTICLE_0']
-         if len(usefulIndices) ==0:
-             particle_id_updated = particle_id
-             distances_updated = distances
-         else:
-             particle_id_updated = [[]]*len(particle_id)
-             distances_updated = [[]]*len(particle_id)
-             print len(distances_updated)
-             for i in usefulIndices:
-                 gasIDs = Glist[str(i)+'_gasID']
-                 overlap = np.where(gasIDs == gasIndices)[0] #find out which gas particles in the cone are in this halo
-                 if len(overlap) == 0:    #if there is no overlap, then we do not need to worry about eliminating intersecting particles
-                     particle_id_updated = particle_id
-                     distances_updated = distances
-                 else:
-                     print len(gasIndices),len(gasIDs),sum([len(i) for i in particle_id])
-                     for j in range(len(particle_id)):
-                         if  len(particle_id[j])>0:
-                             particle_temp = []
-                             dists_temp = []
-                             for k in range(len(particle_id[j])):
-                                 if particle_id[j][k] in overlap:
+def overlapping(indices_in_cone, particle_id, distances, useful_indices,
+                gas_list):
+    """
+    Find all the particles that the ray intersected, and remove them
+    from the nearParticle list
+    """
+    gas_indices = indices_in_cone['PARTICLE_0']
+    if len(useful_indices) == 0:
+        particle_id_updated = particle_id
+        distances_updated = distances
+    else:
+        particle_id_updated = [[]] * len(particle_id)
+        distances_updated = [[]] * len(particle_id)
+        for i in useful_indices:
+            gas_ids = gas_list[str(i) + '_gasID']
+            overlap = np.where(gas_ids == gas_indices)[0]
+            # find out which gas particles in the cone are in this halo
+            if len(overlap) == 0:
+                # if there is no overlap, then we do not need to worry
+                # about eliminating intersecting particles
+                particle_id_updated = particle_id
+                distances_updated = distances
+            else:
+                for j in range(len(particle_id)):
+                    if len(particle_id[j]) > 0:
+                        particle_temp = []
+                        dists_temp = []
+                        for k in range(len(particle_id[j])):
+                            if particle_id[j][k] in overlap:
+                                 pass
+                            else:
+                                if particle_id[j][k] in particle_temp:
                                      pass
-                                 else:
-                                     if particle_id[j][k] in particle_temp:
-                                         pass
-                                     else:
-                                         particle_temp.append(particle_id[j][k])
-                                         dists_temp.append(distances[j][k])
-                             particle_id_updated[j].extend(particle_temp)
-                             distances_updated[j].extend(dists_temp)
-                         else:
-                             pass
-         return particle_id_updated,distances_updated
+                                else:
+                                    particle_temp.append(particle_id[j][k])
+                                    dists_temp.append(distances[j][k])
+                                particle_id_updated[j].extend(particle_temp)
+                                distances_updated[j].extend(dists_temp)
+                    else:
+                         pass
+    return particle_id_updated, distances_updated
 
 # -----------------------------------
 #         MAIN FUNCTIONS
 # -----------------------------------
 
 
-def rayTrace(source2obs,args,out_q):
-        rayInterval, particleTreeSmall,particleTreeMed,particleTreeLarge,galaxyTree,haloTree,galaxySampleRadius,haloSampleRadius,particlePositions, particle_attribs, galaxyPositions, galaxyAttribs, haloPositions, haloAttribs,galaxyGlist, haloGlist = args
+def ray_trace(source2obs, args, out_q):
+        ray_interval, particle_tree_small, particle_tree_med, \
+        particle_tree_large, galaxy_tree, halo_tree, galaxy_sample_radius, \
+        halo_sample_radius, particle_positions, particle_attribs, \
+        galaxy_positions, galaxy_attribs, halo_positions, halo_attribs,\
+        galaxy_gas_list, halo_gas_list = args
 
-        printString = ''
-        printString += "-----------------------------------\n"
-        printString += "-----------TRACING RAY-------------\n"
-        printString += "-----------------------------------\n"
+        print_string = ''
+        print_string += "-----------------------------------\n"
+        print_string += "-----------TRACING RAY-------------\n"
+        print_string += "-----------------------------------\n"
 
-        lenS20 = len(source2obs)
-        #Search the tree
-#        inputList = [[particlePositions[i],particle_attribs['hsml_gas'][i]] for i in range(len(particle_attribs['hsml_gas']))]
-#        originalNumberParticles = np.apply_along_axis(searchPerRadius,1,inputList,str(source2obs[0]))  
+        len_s20 = len(source2obs)
+        # Search the tree
+        near_particles_small = particle_tree_small.query_ball_point(
+            source2obs, 1.0)  #gives list of particles close to ray
+        near_particles_med = particle_tree_med.query_ball_point(
+            source2obs, 1.0)
+        near_particles_large = particle_tree_large.query_ball_point(
+            source2obs, 1.0)
 
-        nearParticlesSmall = particleTreeSmall.query_ball_point(source2obs,1.0)  #gives list of particles close to ray
-        nearParticlesMed = particleTreeMed.query_ball_point(source2obs,1.0)
-        nearParticlesLarge = particleTreeLarge.query_ball_point(source2obs, 1.0)
+        print_string += 'small,medium,large particles before distance check ' \
+                        + str(sum([len(j) for j in near_particles_small])) + \
+                        ',' + str(sum([len(j) for j in near_particles_med])) + \
+                        ',' + str(sum([len(j) for j in near_particles_large]))\
+                        + '\n'
+        original_number_particles =sum(
+            [sum([len(j) for j in near_particles_small]),
+                sum([len(j) for j in near_particles_med]),
+                sum([len(j) for j in near_particles_large])])
 
-        printString += 'small,medium,large particles before distance check '+str(sum([len(j) for j in nearParticlesSmall]))+','+str(sum([len(j) for j in nearParticlesMed]))+','+str(sum([len(j) for j in nearParticlesLarge]))+'\n'
-        originalNumberParticles =sum([sum([len(j) for j in nearParticlesSmall]),sum([len(j) for j in nearParticlesMed]),sum([len(j) for j in nearParticlesLarge])])
 
+        near_particles_small, dist_between_small = check_distance_to_ray(
+            near_particles_small,source2obs,particle_positions,
+            particle_attribs, 'hsml_gas')
+        near_particles_med, dist_between_med = check_distance_to_ray(
+            near_particles_med,source2obs,particle_positions, particle_attribs,
+            'hsml_gas')
+        near_particles_large, dist_between_large = check_distance_to_ray(
+            near_particles_large,source2obs,particle_positions,
+            particle_attribs, 'hsml_gas')
 
-        nearParticlesSmall,distBetSmall = checkDistanceToRay(nearParticlesSmall,source2obs,particlePositions, particle_attribs, 'hsml_gas')
-        nearParticlesMed,distBetMed = checkDistanceToRay(nearParticlesMed,source2obs,particlePositions, particle_attribs, 'hsml_gas')
-        nearParticlesLarge,distBetLarge = checkDistanceToRay(nearParticlesLarge,source2obs,particlePositions, particle_attribs, 'hsml_gas')
-
-        printString +=  'small,medium,large particles after check '+str(sum([len(j) for j in nearParticlesSmall]))+','+str(sum([len(j) for j in nearParticlesMed]))+','+str(sum([len(j) for j in nearParticlesLarge]))+'\n'
+        print_string +=  'small,medium,large particles after check ' + \
+                         str(sum([len(j) for j in near_particles_small])) + \
+                         ',' + str(sum([len(j) for j in near_particles_med])) \
+                         + ',' + \
+                         str(sum([len(j) for j in near_particles_large])) + '\n'
             
-        nearParticles = combineParticleIDs(lenS20,nearParticlesSmall,nearParticlesMed,nearParticlesLarge)
-        particleDist = combineParticleIDs(lenS20,distBetSmall,distBetMed,distBetLarge)
-        print len(nearParticles),len(particleDist)
-        nearGalaxies = galaxyTree.query_ball_point(source2obs, galaxySampleRadius)
-        nearHalos = haloTree.query_ball_point(source2obs, haloSampleRadius)
-        printString +=  'initial numbers of galaxies and halos '+str(sum([len(j) for j in nearGalaxies]))+','+str(sum([len(j) for j in nearHalos]))+'\n'
+        near_particles = combine_particle_ids(
+            len_s20, near_particles_small, near_particles_med,
+            near_particles_large)
+        particle_dist = combine_particle_ids(
+            len_s20, dist_between_small, dist_between_med, dist_between_large)
+        print len(near_particles), len(particle_dist)
+        near_galaxies = galaxy_tree.query_ball_point(
+            source2obs, galaxy_sample_radius)
+        near_halos = halo_tree.query_ball_point(source2obs, halo_sample_radius)
+        print_string += 'initial numbers of galaxies and halos ' + \
+                        str(sum([len(j) for j in near_galaxies])) + ',' + \
+                        str(sum([len(j) for j in near_halos])) + '\n'
 
-        nearGalaxies,distBetGal = checkDistanceToRay(nearGalaxies,source2obs,galaxyPositions, galaxyAttribs, 'radii_r200')
-        nearHalos,distBetHal = checkDistanceToRay(nearHalos,source2obs,haloPositions, haloAttribs, 'radii_r200')
+        near_galaxies, dist_between_galaxies = check_distance_to_ray(
+            near_galaxies, source2obs, galaxy_positions, galaxy_attribs,
+            'radii_r200')
+        near_halos, dist_between_halo = check_distance_to_ray(
+            near_halos, source2obs, halo_positions, halo_attribs, 'radii_r200')
 
+        near_galaxies = np.array(near_galaxies)
+        dist_between_galaxies = np.array(dist_between_galaxies)
+        near_halos = np.array(near_halos)
+        dist_between_halo = np.array(dist_between_halo)
 
-        nearGalaxies = np.array(nearGalaxies)
-        distBetGal = np.array(distBetGal)
-        nearHalos = np.array(nearHalos)
-        distBetHal = np.array(distBetHal)
+        # Get a set of the halos and galaxies to avoid duplicates
+        galaxy_indices, galaxy_dist = get_indices(near_galaxies,
+                                                  dist_between_galaxies)
+        halo_indices, halo_dist = get_indices(near_halos, dist_between_halo)
 
-        #Get a set of the halos and galaxies to avoid duplicates
-        galaxyIndices,galaxyDist = getIndices(nearGalaxies,distBetGal)
-        haloIndices,haloDist = getIndices(nearHalos,distBetHal)
+        print_string +=  'secondary numbers of galaxies and halos ' \
+                         '(actually close enough to ray) ' + \
+                         str(len(galaxy_indices)) + ',' + \
+                         str(len(halo_indices)) + '\n'
 
-        printString +=  'secondary numbers of galaxies and halos (actually close enough to ray) '+str(len(galaxyIndices))+','+str(len(haloIndices))+'\n'
-
-        numberHitPerSource = [originalNumberParticles,len(galaxyIndices),len(haloIndices)]
-        print printString
-        toReturn = [nearParticles,particleDist,galaxyIndices,galaxyDist,haloIndices,haloDist,numberHitPerSource]
+        number_hit_per_source = [original_number_particles,
+            len(galaxy_indices), len(halo_indices)]
+        print print_string
+        to_return = [near_particles, particle_dist, galaxy_indices, galaxy_dist,
+            halo_indices, halo_dist, number_hit_per_source]
 
         if out_q == 'NOTPARALLEL':
-            return toReturn
+            return to_return
         else:
-            out_q.put(toReturn)
+            out_q.put(to_return)
 
 
-def BdirectionFromTree(rays,coherenceLength,particleTreeSmall,particleTreeMed,particleTreeLarge,particlePositions,particle_attribs,particle_id,particleDist,voight_x0,voight_HWHM,rayInterval):
+def B_direction_from_tree(rays, coherence_length, particle_tree_small,
+                       particle_tree_med, particle_tree_large,
+                       particle_positions, particle_attribs, particle_id,
+                       particle_dist, voight_x0, voight_HWHM, ray_interval):
     """
-    Alternative way to assign directions by looking for particles within cooherence length and trying to align direction with the structure
+    Alternative way to assign directions by looking for particles within
+    cooherence length and trying to align direction with the structure
    """
     print [sum([len(i) for i in r]) for r in particle_id.values()]
-    dlDict = {}
+    dl_dict = {}
     for r in rays.keys():
-        if len(rays[r])==0:
-            dlDict[r] = []
+        if len(rays[r]) == 0:
+            dl_dict[r] = []
         else:
-            NeToConsider = findNe(len(rays[r]),particle_id[r],particleDist[r],particle_attribs)
-            nearParticlesSmall = particleTreeSmall.query_ball_point(rays[r],coherenceLength)  #gives list of particles close to ray
-            nearParticlesMed = particleTreeMed.query_ball_point(rays[r],coherenceLength)
-            nearParticlesLarge = particleTreeLarge.query_ball_point(rays[r],coherenceLength)
-            nearParticles = combineParticleIDs(len(rays[r]),nearParticlesSmall,nearParticlesMed,nearParticlesLarge)
-            dlVec = [0]*len(rays[r])
+            NeToConsider = find_ne(len(rays[r]), particle_id[r],
+                                   particle_dist[r], particle_attribs)
+            near_particles_small = particle_tree_small.query_ball_point(
+                rays[r], coherence_length)
+            #gives list of particles close to ray
+            near_particles_med = particle_tree_med.query_ball_point(
+                rays[r], coherence_length)
+            near_particles_large = particle_tree_large.query_ball_point(
+                rays[r], coherence_length)
+            near_particles = combine_particle_ids(len(
+                rays[r]), near_particles_small, near_particles_med,
+                near_particles_large)
+            dl_vec = [0] * len(rays[r])
             try:
-                print 'nearParticles',len(nearParticles),len(nearParticles[0])
+                print 'near_particles', len(near_particles),\
+                    len(near_particles[0])
             except:
                 pass
             sys.stdout.flush()
             for i in range(len(rays[r])):
                 if NeToConsider[i] == 0:
-                     dlVec[i] = 0
-                     initTheta = 2*np.pi*random.random()
-                    #if i ==0:
-                    #    initTheta = 2*np.pi*random.random()
-                    #    dlVec[0] = rayInterval*np.cos(initTheta)
-                    #else:
-                    #    if NeToConsider[i-1] == 0:
-                    #        dlVec[i] = dlVec[i-1]
-                    #    else:
-                    #        changeInTheta = dTheta(voight_x0,voight_HWHM)
-                    #        initTheta = initTheta+changeInTheta
-                    #        dlVec[i] = rayInterval*np.cos(initTheta)
+                     dl_vec[i] = 0
+                     init_theta = 2 * np.pi * random.random()
                 else:
-                    if len(nearParticles[i])==0:
-                        changeInTheta = dTheta(voight_x0,voight_HWHM)
-                        initTheta = initTheta+changeInTheta
-                        dlVec[i] = rayInterval*np.cos(initTheta)
+                    if len(near_particles[i]) == 0:
+                        change_in_theta = d_theta(voight_x0, voight_HWHM)
+                        init_theta = init_theta + change_in_theta
+                        dl_vec[i] = ray_interval * np.cos(init_theta)
                     else:
                     #put in on 16/7/17
-                        if len(nearParticles[i])>1e6:
-                            percent01 = int(0.001*len(nearParticles[i]))
-                            nearParticlesTemp = random.choice(nearParticles[i],size = percent01)
-                        elif len(nearParticles[i])>1e5:
-                            percent1 = int(0.01*len(nearParticles[i]))
-                            nearParticlesTemp = random.choice(nearParticles[i],size = percent1)
-                        elif len(nearParticles[i])>1e4:
-                            percent10 = int(0.1*len(nearParticles[i]))
-                            nearParticlesTemp = random.choice(nearParticles[i],size = percent10)
+                        if len(near_particles[i])>1e6:
+                            percent01 = int(0.001 * len(near_particles[i]))
+                            near_particles_temp = random.choice(
+                                near_particles[i], size = percent01)
+                        elif len(near_particles[i]) > 1e5:
+                            percent1 = int(0.01 * len(near_particles[i]))
+                            near_particles_temp = random.choice(
+                                near_particles[i], size = percent1)
+                        elif len(near_particles[i]) > 1e4:
+                            percent10 = int(0.1 * len(near_particles[i]))
+                            near_particles_temp = random.choice(
+                                near_particles[i], size = percent10)
                     #------------------
-                        vectors = particlePositions[nearParticlesTemp]-rays[r][i]
-                        #print len(particlePositions[nearParticles[i]]), particlePositions[nearParticles[i]],vectors
-                        normedVectors = np.apply_along_axis(normalise,0,np.array(vectors))
-                        resultant_vec = [sum(normedVectors[:,0]),sum(normedVectors[:,1]),sum(normedVectors[:,1])]
-                        normed_resultant_vec = normalise(np.array(resultant_vec))
-                        angularContribution = angle_between(normed_resultant_vec,rays[r][-1])
-                        dlVec[i] = rayInterval*np.cos(angularContribution)
-        #                print 'angular contribution from LSS=',angularContribution, 'and resultant dl=',dlVec[i]
-            dlDict[r] = dlVec
-            print 'Length of directions for ray',r,'is',len(dlVec),len(rays[r])
-    return dlDict
+                        vectors = particle_positions[near_particles_temp] - \
+                                  rays[r][i]
+                        normed_vectors = np.apply_along_axis(normalise, 0,
+                                                             np.array(vectors))
+                        resultant_vec = [sum(normed_vectors[:, 0]),
+                            sum(normed_vectors[:, 1]),
+                            sum(normed_vectors[:, 1])]
+                        normed_resultant_vec = normalise(
+                            np.array(resultant_vec))
+                        angular_contribution = angle_between(
+                            normed_resultant_vec, rays[r][-1])
+                        dl_vec[i] = ray_interval * np.cos(angular_contribution)
+            dl_dict[r] = dl_vec
+            print 'Length of directions for ray',r,'is',len(dl_vec),len(rays[r])
+    return dl_dict
 
 
-def obtainRM(particle_id,galaxyID,haloID,particleDist,galaxyDist,haloDist,particle_attribs,B0,eta,pScale,alpha,realistic_dl,B_Direction,LA,LA_cut,LO,galaxyAttribs,galaxyGlist,haloAttribs,haloGlist,indices_in_cone,out_q):
+def obtain_rm(particle_id, galaxy_id, halo_id, particle_dist, galaxy_dist,
+              halo_dist, particle_attribs, B0, eta, p_scale, alpha,
+              realistic_dl, B_direction, LA, LA_cut, LO, galaxy_attribs,
+              galaxy_gas_list, halo_attribs, halo_gas_list, indices_in_cone,
+              out_q):
         """
         - Adds electron density and metallicity contributions along ray length
         - Calculates magnetic field
         - Ramdomises magnetic field direction
         - Returns Rotation Measure vector
         """
-#        print distance((2.356467515040207672e3,4.500005498139384486e2,7.221242449709170614e+02),source2obs[-1])
 
-        printString = ''
-        printString += "-----------------------------------\n"
-        printString += "---------PROCESSING RAY------------\n"
-        printString += "-----------------------------------\n"
+        print_string = ''
+        print_string += "-----------------------------------\n"
+        print_string += "---------PROCESSING RAY------------\n"
+        print_string += "-----------------------------------\n"
 
-        lenS2O = len(particle_id)
+        len_s20 = len(particle_id)
 
-#        centralGalaxies = checkCentralGalaxy(galaxyID)  #galaxies that are central to their halos
+        print 'len PID before overlaps', len(particle_id)
 
-#        fullHalos,emptyHalos = emptyHalo(haloID) #Different types of halos get different treatment
-
-        print 'len PID before overlaps',len(particle_id)
-        #Clean up particle list so no double-sampling
-
-        #--------ELIMINATE GALAXY OVERLAPS--------# 
-
-        if len(galaxyID)>0:
-            usefulGalaxies = checkUseful(galaxyID,'GALAXY',LA,LA_cut,LO,galaxyAttribs)
-            particle_id,particleDist = overlapping(indices_in_cone,particle_id,particleDist,usefulGalaxies,galaxyGlist)
+        #--------ELIMINATE GALAXY OVERLAPS--------#
+        if len(galaxy_id) > 0:
+            useful_galaxies = check_useful(galaxy_id, 'GALAXY', LA, LA_cut, LO,
+                                          galaxy_attribs)
+            particle_id, particle_dist = overlapping(
+                indices_in_cone, particle_id, particle_dist, useful_galaxies,
+                galaxy_gas_list)
 
         else:
-            usefulGalaxies = galaxyID
-        #--------ELIMINATE HALO OVERLAPS--------#       
+            useful_galaxies = galaxy_id
 
-        if len(haloID)>0:
-            usefulHalos = checkUseful(haloID,'HALO',LA,LA_cut,LO,haloGlist)
+        #--------ELIMINATE HALO OVERLAPS--------#
+        if len(halo_id) > 0:
+            useful_halos = check_useful(halo_id, 'HALO', LA, LA_cut, LO,
+                                        halo_gas_list)
             print [len(i) for i in particle_id[:10]]
-            particle_id,particleDist = overlapping(indices_in_cone,particle_id,particleDist,usefulHalos,haloGlist)
+            particle_id, particle_dist = overlapping(
+                indices_in_cone, particle_id, particle_dist, useful_halos,
+                halo_gas_list)
             print [len(i) for i in particle_id[:10]]
         else:
-            usefulHalos = haloID
+            useful_halos = halo_id
 
         #Keep numbers for stats
-        numberParticles = sum([len(j) for j in particle_id])
-        numberGalaxies = len(galaxyID) #different because galaxy and halo B calculations should only be done once each per source because of nature of calculation
-        numberHalos = len(haloID)
+        number_particles = sum([len(j) for j in particle_id])
+        number_galaxies = len(galaxy_id)
+        number_halos = len(halo_id)
 
         #B, Ne from gas particles
         print 'len PID after overlaps',len(particle_id)
-        filamentData = filamentFields(lenS2O,particle_id,particleDist,particle_attribs,B0,eta,pScale,alpha)
-
-        B = filamentData[0]
-        Ne = filamentData[1]
-        print "Ne size",len(Ne),'length ray',lenS2O
-        dl = directionSampling(lenS2O,Ne,B_Direction,realistic_dl,10)
-        print 'max dl',np.max(dl)
-        print 'max B %.3e microGauss'%np.max(B)
-        print 'max ne %.3e'%np.max(Ne)
-        RM = 811.9*Ne*B*dl  #ray interval is given in mpc but we need it in kpc
+        filament_data = filament_fields(particle_id, particle_dist,
+                                        particle_attribs, B0, p_scale, alpha)
+        B = filament_data[0]
+        Ne = filament_data[1]
+        print "Ne size", len(Ne), 'length ray', len_s20
+        dl = direction_sampling(len_s20, Ne, B_direction, realistic_dl, 10)
+        print 'max dl', np.max(dl)
+        print 'max B %.3e microGauss' % np.max(B)
+        print 'max ne %.3e' % np.max(Ne)
+        RM = 811.9 * Ne * B * dl
+        # ray interval is given in mpc but we need it in kpc
         RM= np.nan_to_num(RM)
         print 'max RM',np.max(RM)
-        galaxyData = usefulGalaxies  #list of galaxies close to the ray
-        haloData = usefulHalos     #list of halos close to the ray
-        numHit = [numberParticles,len(usefulGalaxies),len(usefulHalos)]
-        print max(B),max(Ne)
-        toReturn = (RM,galaxyData,haloData,numHit,B,Ne,dl)
+        galaxy_data = useful_galaxies  # list of galaxies close to the ray
+        halo_data = useful_halos     # list of halos close to the ray
+        num_hit = [number_particles, len(useful_galaxies), len(useful_halos)]
+        print max(B), max(Ne)
+        to_return = (RM, galaxy_data, halo_data, num_hit, B, Ne, dl)
 
-        printString += str(numberParticles)+" particles, "+str(len(usefulGalaxies))+" galaxies, and "+str(len(usefulHalos))+" halos have been found near this LOS.\n"
-        printString += "-----------------------------------\n"
-        print printString
+        print_string += str(number_particles) + " particles, " + \
+            str(len(useful_galaxies)) + " galaxies, and " + \
+            str(len(useful_halos)) + \
+            " halos have been found near this LOS.\n"
+        print_string += "-----------------------------------\n"
+        print print_string
 
         if out_q == 'NOTPARALLEL':
-            return toReturn
+            return to_return
         else:
-            out_q.put(toReturn)
+            out_q.put(to_return)
 
 # -----------------------------------
 #         LIGHTRAY FUNCTIONS
 # -----------------------------------
 
 
-def lightRay(start_distance, piece, vector_pc, out_q):
+def light_ray(start_distance, piece, vector_pc, out_q):
     """
     Takes in the source positions all at once and returns vectors along
     the LOS from observer to source
     """
     # array to use to find vectors to sources
-    pcs = np.linspace(0, start_distance, piece+1)
+    pcs = np.linspace(0, start_distance, piece + 1)
     # construct the light ray
     a = np.multiply(vector_pc.reshape(3, 1), pcs)
     if out_q == 'NOTPARALLEL':
@@ -810,7 +892,7 @@ def chunks(l, n):
     evenly-sized-chunks-in-python
     """
     for i in xrange(0, len(l), n):
-        yield l[i:i+n]
+        yield l[i:i + n]
 
 
 def replaceLine(file_name, parameter, new_number):

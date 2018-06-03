@@ -17,8 +17,8 @@ print wholeCube[0]
 
 def light_ray(start_distance, piece, vector_pc):
     """
-    Takes in the source positions all at once and returns vectors along the LOS
-    from observer to source
+    Takes in the source positions all at once and returns vectors along the
+    LOS from observer to source
     """
     # array to use to find vectors to sources
     pcs = np.linspace(0, start_distance, piece+1)

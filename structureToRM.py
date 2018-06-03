@@ -13,12 +13,12 @@ start = time.time()
 # ===============================================================
 cmdargs = str(sys.argv)
 print sys.argv
-numCube = np.int(sys.argv[1])
-sectionOfRays = int(sys.argv[2])
+num_cube = np.int(sys.argv[1])
+section_of_rays = int(sys.argv[2])
 outPath = sys.argv[3]
 coherenceScale = sys.argv[4]
 
-B_Direction = check_direction(outPath)
+B_direction = check_direction(outPath)
 B0 = check_B0(outPath)
 eta = check_eta(outPath)
 
@@ -34,30 +34,30 @@ with open(path.join(dir, outPath + "params.txt")) as f:
         line = content[i].split("=")
         # Running parameters
         if line[0] == "NUMCUBES":
-            numCubes = int(line[1])
+            num_cubes = int(line[1])
         elif line[0] == "LIGHTCONE_PATH":
-            datPath = line[1][:-1]
+            dat_path = line[1][:-1]
         elif line[0] == "SOURCES":
-            numSources = int(line[1])
+            num_sources = int(line[1])
         elif line[0] == "LOS":
             lineOfSight = normalise(np.array((line[1]).split(","), np.float))   
         elif line[0] == "PARALLELCHUNKSIZE":
             parallelChunkSize = int(line[1])        
         # Testing parameters
         elif line[0] == "RAYINTERVAL":
-            rayInterval = float(line[1])
+            ray_interval = float(line[1])
         elif line[0] == "SAMPLING_PARTICLE":
             particleSampleRadius = float(line[1]) 
         elif line[0] == "SAMPLING_GALAXY":
-            galaxySampleRadius = float(line[1])  
+            galaxy_sample_radius = float(line[1])
         elif line[0] == "SAMPLING_HALO":
-            haloSampleRadius = float(line[1])   
+            halo_sample_radius = float(line[1])
         elif line[0] == "ALPHATOP":
             alphaTop = float(line[1])
         elif line[0] == "ALPHABOTTOM":
             alphaBottom = float(line[1])
         elif line[0] == "PSCALEFACTOR":
-            pScale = float(line[1])
+            p_scale = float(line[1])
         elif line[0] == "LIMITING_ATTRIBUTE":
             LA = ((line[1]).split("\n")[0]).split(',')
         elif line[0] == "LA_CUT":
@@ -71,82 +71,77 @@ with open(path.join(dir, outPath + "params.txt")) as f:
             voight_HWHM = float(line[1])
 
 alpha = alphaTop / alphaBottom
-dl = rayInterval * 1000.0  # Mpc to kpc
-print "Sampling with a radius of", galaxySampleRadius,\
-      "for galaxies and", haloSampleRadius, "for halos"
+dl = ray_interval * 1000.0  # Mpc to kpc
+print "Sampling with a radius of", galaxy_sample_radius,\
+      "for galaxies and", halo_sample_radius, "for halos"
 
 sys.stdout.flush()
 
-indicesInCone = {}
+indices_in_cone = {}
 with h5py.File(os.path.expanduser(
-        datPath + 'indicesInCone_' + str(numCube) + '_PARTICLE_0'),
+        dat_path + 'indices_in_cone_' + str(num_cube) + '_PARTICLE_0'),
         'r') as data:
     for i in data.keys():
-        indicesInCone[i] = data[i][:]
+        indices_in_cone[i] = data[i][:]
 with h5py.File(os.path.expanduser(
-        datPath + 'indicesInCone_' + str(numCube) + 'GALAXY'), 'r') as data:
+        dat_path + 'indices_in_cone_' + str(num_cube) + 'GALAXY'), 'r') as data:
     for i in data.keys():
-        indicesInCone[i] = data[i][:]
+        indices_in_cone[i] = data[i][:]
 with h5py.File(os.path.expanduser(
-        datPath + 'indicesInCone_' + str(numCube) + 'HALO'), 'r') as data:
+        dat_path + 'indices_in_cone_' + str(num_cube) + 'HALO'), 'r') as data:
     for i in data.keys():
-        indicesInCone[i] = data[i][:]
+        indices_in_cone[i] = data[i][:]
 print 'Indices in Cone'
-for i in indicesInCone.keys():
-    print i, indicesInCone[i].shape
+for i in indices_in_cone.keys():
+    print i, indices_in_cone[i].shape
 
 # ===============================================================
 #                     READ IN FIELD DIRECTIONS
 # ===============================================================
-dlDict = {}
+dl_dict = {}
 with h5py.File(os.path.expanduser(
-        'directionOfField_' + coherenceScale + '/Bdirection_' + str(numCube) +
-        '_' + str(sectionOfRays) + '_' + coherenceScale+'kpc'), 'r') as data:
+        'directionOfField_' + coherenceScale + '/Bdirection_' + str(num_cube) +
+        '_' + str(section_of_rays) + '_' + coherenceScale+'kpc'), 'r') as data:
     print 'field direction keys', data.keys()
     lengthOfRayHere = [len(x) for x in data.values()]
     for keys in data.keys():
-        dlDict[keys] = data[keys][:]
+        dl_dict[keys] = data[keys][:]
 
 # ===============================================================
 #                     READ IN PARTICLE DATA
 # ===============================================================
-particlePositions, particleAttribs = readLightcone('PARTICLE',
-                                                   indicesInCone,
-                                                   datPath,
-                                                   numCube)
-minDistance = np.min(particleAttribs['distance_gas'])
-maxDistance = np.max(particleAttribs['distance_gas'])
+particle_positions, particle_attribs = read_lightcone(
+    'PARTICLE', indices_in_cone, dat_path, num_cube)
+minDistance = np.min(particle_attribs['distance_gas'])
+maxDistance = np.max(particle_attribs['distance_gas'])
 print 'Distance in range:', minDistance, maxDistance
-print particleAttribs.keys(), particleAttribs.values()
-for i in range(len(particleAttribs.keys())):
-    print particleAttribs.keys()[i], len(particleAttribs.values()[i]),\
-        'eg:', particleAttribs.values()[i][0]
-print 'Max hsml', np.max(particleAttribs['hsml_gas'])
-plt.hist(particleAttribs['hsml_gas'])
+print particle_attribs.keys(), particle_attribs.values()
+for i in range(len(particle_attribs.keys())):
+    print particle_attribs.keys()[i], len(particle_attribs.values()[i]),\
+        'eg:', particle_attribs.values()[i][0]
+print 'Max hsml', np.max(particle_attribs['hsml_gas'])
+plt.hist(particle_attribs['hsml_gas'])
 plt.savefig('hsml.pdf')
+
 # ===============================================================
 #                     READ IN GALAXY DATA
 # ===============================================================
-galaxyPositions, galaxyAttribs, galaxyGlist = readLightcone('GALAXY',
-                                                            indicesInCone,
-                                                            datPath,
-                                                            numCube)
-for i in range(len(galaxyAttribs.keys())):
+galaxy_positions, galaxy_attribs, galaxy_gas_list = read_lightcone(
+    'GALAXY', indices_in_cone, dat_path, num_cube)
+for i in range(len(galaxy_attribs.keys())):
     print 'Galaxy Attributes'
-    print galaxyAttribs.keys()[i], len(galaxyAttribs.values()[i]), \
-        galaxyAttribs.values()[i][0]
+    print galaxy_attribs.keys()[i], len(galaxy_attribs.values()[i]), \
+        galaxy_attribs.values()[i][0]
 
 # ===============================================================
 #                       READ IN HALO DATA
 # ===============================================================
-haloPositions, haloAttribs, haloGlist = readLightcone('HALO',
-                                                      indicesInCone,
-                                                      datPath,
-                                                      numCube)
-for i in range(len(haloAttribs.keys())):
+halo_positions, halo_attribs, halo_gas_list = read_lightcone(
+    'HALO', indices_in_cone, dat_path, num_cube)
+for i in range(len(halo_attribs.keys())):
     print 'Halo Attributes'
-    print haloAttribs.keys()[i], len(haloAttribs.values()[i]), \
-        haloAttribs.values()[i][0]
+    print halo_attribs.keys()[i], len(halo_attribs.values()[i]), \
+        halo_attribs.values()[i][0]
 
 # ===============================================================
 #                     READ IN STRUCTURE ALONG RAYS
@@ -156,7 +151,7 @@ print "--------READING IN STRUCTURE-------"
 print "-----------------------------------"
 
 particleID, galaxyID, haloID, particleDist, galaxyDist, haloDist = \
-    readStructure(numCube, sectionOfRays, inPath, numSources)
+    read_structure(num_cube, section_of_rays, inPath)
 print particleID.keys()
 print galaxyID.keys()
 print haloID.keys()
@@ -208,13 +203,14 @@ for i in particleID.keys():
         else:
             out_q = 'NOTPARALLEL'
             print 'Processing ray', i, 'of shape', len(particleID[sourcekey])
-            returned = obtainRM(particleID[sourcekey], galaxyID[sourcekey],
-                                haloID[sourcekey], particleDist[sourcekey],
-                                galaxyDist[sourcekey], haloDist[sourcekey],
-                                particleAttribs, B0, eta, pScale, alpha,
-                                dlDict[sourcekey], B_Direction, LA, LA_cut, LO,
-                                galaxyAttribs, galaxyGlist, haloAttribs,
-                                haloGlist, indicesInCone, out_q)
+            returned = obtain_rm(particleID[sourcekey], galaxyID[sourcekey],
+                                 haloID[sourcekey], particleDist[sourcekey],
+                                 galaxyDist[sourcekey], haloDist[sourcekey],
+                                 particle_attribs, B0, eta, p_scale, alpha,
+                                 dl_dict[sourcekey], B_direction, LA, LA_cut,
+                                 LO, galaxy_attribs, galaxy_gas_list,
+                                 halo_attribs, halo_gas_list, indices_in_cone,
+                                 out_q)
             rmVec = returned[0]
             rotationMeasure.append(rmVec)  # get the calculation's output
             galVec = returned[1]
@@ -241,31 +237,32 @@ print "-----------------------------------"
 loc = path.dirname(__file__)
 
 cubeDistanceRadii = path.join(
-    loc, outPath + 'cubeDistanceRadii' + str(numCube) + '_'
-    + str(sectionOfRays))
+    loc, outPath + 'cubeDistanceRadii' + str(num_cube) + '_'
+    + str(section_of_rays))
 rotationMeasureFile = path.join(
-    loc, outPath + 'rotationMeasure' + str(numCube) + '_' + str(sectionOfRays))
+    loc, outPath + 'rotationMeasure' + str(num_cube) + '_' +
+         str(section_of_rays))
 particles_galaxies_halos_hitPerSourceFile = path.join(
-    loc, outPath + 'particles_galaxies_halos_hitPerSource_' + str(numCube) +
-    '_' + str(sectionOfRays))
+    loc, outPath + 'particles_galaxies_halos_hitPerSource_' + str(num_cube) +
+    '_' + str(section_of_rays))
 NeBFile = path.join(
-    loc, outPath + 'NeBprofiles' + str(numCube) + '_' + str(sectionOfRays))
+    loc, outPath + 'NeBprofiles' + str(num_cube) + '_' + str(section_of_rays))
 
 print 'Files allocated'
 sys.stdout.flush()
 
-stringToWrite = str(numCube) + ',' + \
-                str(np.max(particleAttribs['redshift_gas'])) + ',' + \
-                str(np.max(particleAttribs['distance_gas'])) + ',' + \
-                str(np.max(galaxyAttribs['radii_r200'])) + ',' + \
-                str(np.max(haloAttribs['radii_r200'])) + '\n'
+stringToWrite = str(num_cube) + ',' + \
+                str(np.max(particle_attribs['redshift_gas'])) + ',' + \
+                str(np.max(particle_attribs['distance_gas'])) + ',' + \
+                str(np.max(galaxy_attribs['radii_r200'])) + ',' + \
+                str(np.max(halo_attribs['radii_r200'])) + '\n'
 with open(cubeDistanceRadii, 'a') as f:
     f.write(stringToWrite)
 
 print numberHit
 numberHit = np.array(numberHit)
 with h5py.File(particles_galaxies_halos_hitPerSourceFile) as hf:
-    hf.create_dataset(str(numCube), data=numberHit, chunks=True,
+    hf.create_dataset(str(num_cube), data=numberHit, chunks=True,
                       compression='gzip', compression_opts=4)
 
 rotationMeasure = np.array(rotationMeasure)

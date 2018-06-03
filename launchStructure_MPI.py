@@ -12,18 +12,18 @@ import time
 import platform
 import glob
 
-z=0
-box=0
-axis=0
-toStart=0
-numCubes=0
-running=0
-zBins=0
-doDM= False
+z = 0
+box = 0
+axis = 0
+toStart = 0
+num_cubes = 0
+running = 0
+zBins = 0
+doDM = False
 pixElems = 11
 pixels = 0
-zBins = 0
 genSources = 'NO'
+
 
 def intro():
 
@@ -45,9 +45,10 @@ def intro():
     print ""
     time.sleep(2)
 
+
 def params():
 
-    global numCubes,numSources,genSources,outPath,raypieces
+    global num_cubes, num_sources, genSources, outPath, raypieces
     print "Checking parameters..."
 
     #read params
@@ -58,13 +59,13 @@ def params():
             line = content[i].split("=")
 
             if(line[0] == "NUMCUBES"):
-                numCubes = int(line[1])
+                num_cubes = int(line[1])
 
             elif(line[0] == "SOURCES"):
-                numSources = int(line[1])
+                num_sources = int(line[1])
 
-            elif(line[0] == "B_DIRECTION"):
-                B_Direction = str(line[1])
+            elif(line[0] == "B_direction"):
+                B_direction = str(line[1])
 
             elif(line[0] == "B0"):
                 B0 = float(line[1])
@@ -81,13 +82,14 @@ def params():
             elif(line[0] == "OUTPUT_PATH"):
                 outPath = line[1][:-1]
     
-    if(numCubes == 0):
+    if(num_cubes == 0):
         print "Could not find NUMCUBES in param.txt"
         sys.exit()
 
     print "Done."
     print ""
     time.sleep(2)
+
 
 def clean():
     #empty the offsets file
@@ -111,18 +113,18 @@ def clean():
         except Exception, e:
             print e
 
-def makeSources():
 
+def make_sources():
     dir = os.path.dirname(__file__)
     filename = os.path.join(dir, 'logs/sources.log')
     os.system("python sourcesFromCone.py > " +filename )
     os.system("python makeLightRay.py")
     print "Sources have been generated."
 
+
 sys.stdout.flush()
 
-
-#----------------------------------------------
+# ----------------------------------------------
 cmdargs = str(sys.argv)
 print cmdargs
 print sys.argv
@@ -137,12 +139,13 @@ wt = MPI.Wtime()
 comm.Barrier()
 
 arg2 = str(rank)
-script_path = "/mnt/lustre/users/lhunt/CurrentCode/rayTraceForStructure.py" # path to external python script
+# path to external python script
+script_path = "/mnt/lustre/users/lhunt/CurrentCode/rayTraceForStructure.py"
 
-#check versions and files
+# check versions and files
 intro()
 
-#check params
+# check params
 params()
 outPath = '/mnt/lustre/users/lhunt/CurrentCode/structureAlongRays'
 

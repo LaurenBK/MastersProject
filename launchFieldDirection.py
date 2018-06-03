@@ -9,7 +9,7 @@ z = 0
 box = 0
 axis = 0
 toStart = 0
-numCubes = 0
+num_cubes = 0
 running = 0
 zBins = 0
 doDM = False
@@ -44,7 +44,7 @@ def intro():
 
 def params():
 
-    global numCubes, numSources, genSources, outPath, raypieces
+    global num_cubes, num_sources, genSources, outPath, raypieces
     print "Checking parameters..."
 
     # read params
@@ -54,11 +54,11 @@ def params():
         for i in range(len(content)):
             line = content[i].split("=")
 
-            if line[0] == "NUMCUBES":
-                numCubes = int(line[1])
+            if line[0] == "num_cubeS":
+                num_cubes = int(line[1])
 
             elif line[0] == "SOURCES":
-                numSources = int(line[1])
+                num_sources = int(line[1])
 
             elif line[0] == "RAYPIECES":
                 raypieces = int(line[1])
@@ -66,8 +66,8 @@ def params():
             elif line[0] == "OUTPUT_PATH":
                 outPath = line[1][:-1]
     
-    if numCubes == 0:
-        print "Could not find NUMCUBES in param.txt"
+    if num_cubes == 0:
+        print "Could not find num_cubeS in param.txt"
         sys.exit()
 
     print "Done."
@@ -114,7 +114,7 @@ print cmdargs
 print sys.argv
 startCube = np.int(sys.argv[1])
 endCube = np.int(sys.argv[2])
-coherenceLength = np.float(sys.argv[3]) 
+coherence_length = np.float(sys.argv[3])
 
 comm = MPI.COMM_WORLD
 rank = comm.rank
@@ -133,7 +133,7 @@ intro()
 # check params
 params()
 outPath = '/mnt/lustre/users/lhunt/CurrentCode/directionOfField_' + \
-          str(int(coherenceLength))
+          str(int(coherence_length))
 
 print 'number ray pieces', raypieces
 print 'outPath', outPath
@@ -216,23 +216,24 @@ if rank == 0:
         cubeToRun = startCube + (i - startCube) / raypieces
         raySectionToRun = (i - startCube) % raypieces
         print outPath + '/Bdirection_' + str(cubeToRun) + '_' + \
-            str(raySectionToRun) + '_' + str(int(coherenceLength)) + 'kpc'
+            str(raySectionToRun) + '_' + str(int(coherence_length)) + 'kpc'
         if not os.path.exists(
             outPath + '/Bdirection_' + str(cubeToRun) + '_' +
-                str(raySectionToRun) + '_' + str(int(coherenceLength)) + 'kpc'):
+                str(raySectionToRun) + '_' + str(int(coherence_length)) +
+                        'kpc'):
             print 'With starting cube:', startCube, 'we process cube', \
               cubeToRun, 'with subsection', raySectionToRun
             logfile = os.path.join(dir, outPath + '/logs/tracingStructure_' +
                                    str(cubeToRun) + '_' +
                                    str(raySectionToRun) + '_'
-                                   + str(coherenceLength) + 'kpc' + '.log')
-            exec_command = "python " + script_path + " " + str(coherenceLength)\
-                + " " + str(cubeToRun) + ' ' + str(raySectionToRun) + ' '\
-                + " > " + logfile
+                                   + str(coherence_length) + 'kpc' + '.log')
+            exec_command = "python " + script_path + " " + \
+                str(coherence_length) + " " + str(cubeToRun) + ' ' + \
+                str(raySectionToRun) + ' ' + " > " + logfile
             os.system(exec_command)
         else:
             print 'Bdirection_' + str(cubeToRun) + '_' + str(raySectionToRun) +\
-                '_' + str(int(coherenceLength)) + 'kpc',\
+                '_' + str(int(coherence_length)) + 'kpc',\
                 'exists, so skipping this one'
 else:
     for i in tasklist:
@@ -242,20 +243,20 @@ else:
         raySectionToRun = (i - startCube) % raypieces
         if not os.path.exists(outPath + '/Bdirection' + str(cubeToRun) + '_' +
                               str(raySectionToRun) + '_' +
-                              str(int(coherenceLength)) + 'kpc'):
+                              str(int(coherence_length)) + 'kpc'):
             print 'With starting cube:', startCube, 'we process cube',\
                 cubeToRun, 'with subsection', raySectionToRun
             logfile = os.path.join(dir, outPath + '/logs/tracingStructure_' +
                                    str(cubeToRun) + '_' +
                                    str(raySectionToRun) + '_' +
-                                   str(coherenceLength) + 'kpc' + '.log')
-            exec_command = "python " + script_path + " " + str(coherenceLength)\
-                + " " + str(cubeToRun) + ' ' + str(raySectionToRun) \
-                + ' ' + " > " + logfile
+                                   str(coherence_length) + 'kpc' + '.log')
+            exec_command = "python " + script_path + " " + \
+                str(coherence_length) + " " + str(cubeToRun) + ' ' +  \
+                str(raySectionToRun) + ' ' + " > " + logfile
             os.system(exec_command)
         else:
             print 'Bdirection' + str(cubeToRun) + '_' + str(raySectionToRun) + \
-                 '_' + str(coherenceLength) + 'kpc',\
+                 '_' + str(coherence_length) + 'kpc',\
                  'exists, so skipping this one'
 comm.Barrier()
 
