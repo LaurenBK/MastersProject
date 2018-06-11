@@ -51,38 +51,38 @@ def params():
     global num_cubes, num_sources, genSources, outPath, raypieces
     print "Checking parameters..."
 
-    #read params
+    # read params
     with open("params.txt") as f:
         content = f.readlines()
 
         for i in range(len(content)):
             line = content[i].split("=")
 
-            if(line[0] == "NUMCUBES"):
+            if line[0] == "NUMCUBES":
                 num_cubes = int(line[1])
 
-            elif(line[0] == "SOURCES"):
+            elif line[0] == "SOURCES":
                 num_sources = int(line[1])
 
-            elif(line[0] == "B_direction"):
+            elif line[0] == "B_direction":
                 B_direction = str(line[1])
 
-            elif(line[0] == "B0"):
+            elif line[0] == "B0":
                 B0 = float(line[1])
 
-            elif(line[0] == "ETA"):
+            elif line[0] == "ETA":
                 eta = float(line[1])
 
-            elif(line[0] == "RAYPIECES"):
+            elif line[0] == "RAYPIECES":
                 raypieces = int(line[1])
 
-            elif(line[0] == "GENERATE_SOURCES"):
+            elif line[0] == "GENERATE_SOURCES":
                 genSources = line[1].split('\n')[0]
 
-            elif(line[0] == "OUTPUT_PATH"):
+            elif line[0] == "OUTPUT_PATH":
                 outPath = line[1][:-1]
     
-    if(num_cubes == 0):
+    if num_cubes == 0:
         print "Could not find NUMCUBES in param.txt"
         sys.exit()
 
@@ -92,10 +92,10 @@ def params():
 
 
 def clean():
-    #empty the offsets file
+    # empty the offsets file
     open("cube_offsets.txt", 'w').close()
 
-    #delete old data files
+    # delete old data files
     for the_file in os.listdir(outPath):
         file_path = os.path.join(outPath, the_file)
         try:
@@ -104,7 +104,7 @@ def clean():
         except Exception, e:
             print e
 
-    #delete old log files
+    # delete old log files
     for the_file in os.listdir(outPath+'/logs/'):
         file_path = os.path.join(outPath+'/logs/', the_file)
         try:
@@ -117,7 +117,7 @@ def clean():
 def make_sources():
     dir = os.path.dirname(__file__)
     filename = os.path.join(dir, 'logs/sources.log')
-    os.system("python sourcesFromCone.py > " +filename )
+    os.system("python sourcesFromCone.py > " + filename)
     os.system("python makeLightRay.py")
     print "Sources have been generated."
 
@@ -149,69 +149,71 @@ intro()
 params()
 outPath = '/mnt/lustre/users/lhunt/CurrentCode/structureAlongRays'
 
-print 'number ray pieces',raypieces
-print 'outPath',outPath
+print 'number ray pieces', raypieces
+print 'outPath', outPath
 print os.path.exists(outPath)
-print os.path.exists(outPath+"/logs")
+print os.path.exists(outPath + "/logs")
 
 if not os.path.exists(outPath):
         try:
             os.makedirs(outPath)
-        except:
+        except OSError:
             print 'Folder seems to exist already...'
 
-if not os.path.exists(outPath+"/logs"):
-    os.makedirs(outPath+"/logs")
+if not os.path.exists(outPath + "/logs"):
+    os.makedirs(outPath + "/logs")
 
 if startCube == 0:
-    #wipe old data
+    # wipe old data
     clean()
     
-    shutil.copyfile('params.txt', outPath+'/params.txt')
+    shutil.copyfile('params.txt', outPath + '/params.txt')
     if endCube == 0:
         N = raypieces
     else:
-        N = endCube*raypieces  #one task per section of rays
-elif startCube >0:
-    N = (endCube-startCube+1)*raypieces #number of independent things to process
+        N = endCube*raypieces  # one task per section of rays
+elif startCube > 0:
+    N = (endCube - startCube + 1) * raypieces
+    # number of independent things to process
 else: 
     pass
-print 'rank',rank
-print 'number of processors',num_procs
-print 'number of independent things to process',N
+print 'rank', rank
+print 'number of processors', num_procs
+print 'number of independent things to process', N
 
-with open('rayTracingInfo.txt','a') as f:
-    l = str(str(startCube+N)+','+str(rank)+','+str(num_procs)+'\n')
-    f.write(l)
+with open('rayTracingInfo.txt', 'a') as f:
+    dat = str(str(startCube + N) + ',' + str(rank) + ',' +
+              str(num_procs) + '\n')
+    f.write(dat)
 
 
 # let rank 0 do chunk+rem number of items, the others just do chunk amounts
-if N>num_procs:
-    chunk = int(np.floor(float(N)/float(num_procs)))
-    rem = N - chunk*num_procs
+if N > num_procs:
+    chunk = int(np.floor(float(N) / float(num_procs)))
+    rem = N - chunk * num_procs
 else:
     chunk = 1
     rem = 0
 
 comm.Barrier()
-if rank==0:
-   print "Chunk/rem: ", chunk, rem
+if rank == 0:
+    print "Chunk/rem: ", chunk, rem
 else:
-   pass
+    pass
 comm.Barrier()
 
 # Calculate which rank does what list of items
 comm.Barrier()
-if rank==0:
+if rank == 0:
    start = startCube
-   end = start+ chunk + rem
-   tasklist = range(start,end)
+   end = start + chunk + rem
+   tasklist = range(start, end)
    print "Tasklist for rank " + str(rank), tasklist
 else:
-   start = startCube + (chunk + rem) + (rank-1)*chunk
+   start = startCube + (chunk + rem) + (rank - 1) * chunk
    end = start + chunk
-   print 'start/end',start,end
-   tasklist = range(start,end)
+   print 'start/end', start, end
+   tasklist = range(start, end)
    print "Tasklist for rank " + str(rank), tasklist
 comm.Barrier()
 sys.stdout.flush()
@@ -219,35 +221,43 @@ sys.stdout.flush()
 # proceed with the main calculation
 dir = os.path.dirname(__file__)
 comm.Barrier()
-                               
-# proceed with the main calculation
-dir = os.path.dirname(__file__)
-comm.Barrier()
-if rank==0:
-   for i in tasklist:
-      print i, startCube
-      cubeToRun = startCube + (i-startCube)/raypieces
-      raySectionToRun = (i-startCube)%raypieces
-      if not os.path.exists(outPath+'/objectsAlongRay'+str(cubeToRun)+'_'+str(raySectionToRun)):
-          print 'With starting cube:',startCube,'we process cube',cubeToRun,'with subsection',raySectionToRun
-          logfile = os.path.join(dir, outPath+'/logs/tracingStructure_'+str(cubeToRun)+'_'+str(raySectionToRun)+'.log')
-          exec_command = "python " + script_path + " " + str(cubeToRun) + ' '+ str(raySectionToRun) + ' ' +  " > " +logfile
-          os.system(exec_command)
-      else:
-          print 'objectsAlongRay'+str(cubeToRun)+'_'+str(raySectionToRun),'exists, so skipping this one'
+if rank == 0:
+    for i in tasklist:
+        print i, startCube
+        cubeToRun = startCube + (i - startCube) / raypieces
+        raySectionToRun = (i - startCube) % raypieces
+        if not os.path.exists(outPath + '/objectsAlongRay' + str(cubeToRun) +
+                                      '_' + str(raySectionToRun)):
+            print 'With starting cube:', startCube, 'we process cube', \
+                cubeToRun, 'with subsection', raySectionToRun
+            logfile = os.path.join(dir, outPath + '/logs/tracingStructure_' +
+                                      str(cubeToRun) + '_' +
+                                      str(raySectionToRun) + '.log')
+            exec_command = "python " + script_path + " " + str(cubeToRun) + ' ' \
+                           + str(raySectionToRun) + ' ' + " > " + logfile
+            os.system(exec_command)
+        else:
+            print 'objectsAlongRay' + str(cubeToRun) + '_' + \
+                 str(raySectionToRun), 'exists, so skipping this one'
 else:
-   for i in tasklist:
-      print i, startCube,(startCube + (chunk + rem) + (rank-1)*chunk) ,i-startCube
-      cubeToRun = startCube + (i-startCube)/raypieces
-      #cubeToRun = (startCube + (chunk + rem) + (rank-1)*chunk) + (i-startCube)/raypieces
-      raySectionToRun = (i-startCube)%raypieces
-      if not os.path.exists(outPath+'/objectsAlongRay'+str(cubeToRun)+'_'+str(raySectionToRun)):
-          print 'With starting cube:',startCube,'we process cube',cubeToRun,'with subsection',raySectionToRun
-          logfile = os.path.join(dir, outPath+'/logs/tracingStructure_'+str(cubeToRun)+'_'+str(raySectionToRun)+'.log')
-          exec_command = "python " + script_path + " " + str(cubeToRun) + ' '+ str(raySectionToRun) + ' ' +  " > " +logfile
-          os.system(exec_command)
-      else:
-          print 'objectsAlongRay'+str(cubeToRun)+'_'+str(raySectionToRun),'exists, so skipping this one'
+    for i in tasklist:
+        print i, startCube, (startCube + (chunk + rem) + (rank - 1) * chunk),\
+           i - startCube
+        cubeToRun = startCube + (i - startCube) / raypieces
+        raySectionToRun = (i - startCube) % raypieces
+        if not os.path.exists(outPath + '/objectsAlongRay' + str(cubeToRun) +
+                              '_' + str(raySectionToRun)):
+            print 'With starting cube:', startCube, 'we process cube', cubeToRun,\
+              'with subsection', raySectionToRun
+            logfile = os.path.join(dir, outPath + '/logs/tracingStructure_' +
+                                   str(cubeToRun) + '_' +
+                                   str(raySectionToRun) + '.log')
+            exec_command = "python " + script_path + " " + str(cubeToRun) + ' ' \
+                         + str(raySectionToRun) + ' ' + " > " + logfile
+            os.system(exec_command)
+        else:
+            print 'objectsAlongRay' + str(cubeToRun) + '_' + \
+                str(raySectionToRun), 'exists, so skipping this one'
 comm.Barrier()
 
 wt = MPI.Wtime() - wt
